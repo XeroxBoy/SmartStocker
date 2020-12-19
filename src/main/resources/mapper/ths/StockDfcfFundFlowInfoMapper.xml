@@ -1,0 +1,311 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ths.dao.StockDfcfFundFlowInfoMapper">
+  <resultMap id="BaseResultMap" type="com.ths.domain.StockDfcfFundFlowInfo">
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="stock_market" jdbcType="VARCHAR" property="stockMarket" />
+    <result column="stock_rank" jdbcType="VARCHAR" property="stockRank" />
+    <result column="stock_code" jdbcType="VARCHAR" property="stockCode" />
+    <result column="stock_name" jdbcType="VARCHAR" property="stockName" />
+    <result column="price_new" jdbcType="DECIMAL" property="priceNew" />
+    <result column="stock_change" jdbcType="DECIMAL" property="stockChange" />
+    <result column="main_net_inflow_amount" jdbcType="DECIMAL" property="mainNetInflowAmount" />
+    <result column="main_net_proportion" jdbcType="DECIMAL" property="mainNetProportion" />
+    <result column="super_big_part_net_inFlow_amount" jdbcType="DECIMAL" property="superBigPartNetInflowAmount" />
+    <result column="super_big_part_net_proportion" jdbcType="DECIMAL" property="superBigPartNetProportion" />
+    <result column="big_part_net_inFlow_amount" jdbcType="DECIMAL" property="bigPartNetInflowAmount" />
+    <result column="big_part_net_proportion" jdbcType="DECIMAL" property="bigPartNetProportion" />
+    <result column="middle_part_net_inFlow_amount" jdbcType="DECIMAL" property="middlePartNetInflowAmount" />
+    <result column="middle_part_net_proportion" jdbcType="DECIMAL" property="middlePartNetProportion" />
+    <result column="litter_part_net_inFlow_amount" jdbcType="DECIMAL" property="litterPartNetInflowAmount" />
+    <result column="litter_part_net_proportion" jdbcType="DECIMAL" property="litterPartNetProportion" />
+    <result column="stock_page" property="stockPage" />
+    <result column="count_time" jdbcType="TIMESTAMP" property="countTime" />
+    <result column="time_version" jdbcType="VARCHAR" property="timeVersion" />
+    <result column="crawler_version" jdbcType="VARCHAR" property="crawlerVersion" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    id, stock_market, stock_rank, stock_code, stock_name, price_new, stock_change, main_net_inflow_amount,
+    main_net_proportion, super_big_part_net_inFlow_amount, super_big_part_net_proportion,
+    big_part_net_inFlow_amount, big_part_net_proportion, middle_part_net_inFlow_amount,
+    middle_part_net_proportion, litter_part_net_inFlow_amount, litter_part_net_proportion,
+    count_time,stock_page, time_version,crawler_version, create_time, update_time
+  </sql>
+
+  <select id="selectStockNameByCrawlerVersion" resultType="java.lang.String">
+    SELECT stock_name
+    FROM stock_dfcf_fund_flow_info
+    WHERE stock_code = #{stockCode} AND crawler_version = #{timeVersion}
+    limit 1
+  </select>
+
+  <select id="selectByCrawlerVersion" resultType="java.lang.String">
+    SELECT DISTINCT stock_code
+    FROM stock_dfcf_fund_flow_info
+    WHERE crawler_version = #{crawlerVersion}
+  </select>
+
+  <!-- 连续三天小跌 第四天涨 -->
+  <select id="selectThreeDownFourUp" resultType="java.lang.String">
+    SELECT
+      DISTINCT s.stock_code
+    FROM stock_data.stock_dfcf_fund_flow_info s
+    WHERE s.stock_code IN (
+      SELECT
+        DISTINCT x.stock_code
+      FROM
+        stock_data.stock_dfcf_fund_flow_info x
+      WHERE
+          (x.crawler_version = #{oneDay}   AND x.stock_change <![CDATA[ <= ]]> 1.7)
+        OR
+          (x.crawler_version = #{TwoDay}   AND x.stock_change <![CDATA[ <= ]]> 1.7)
+        OR
+          (x.crawler_version = #{ThreeDay} AND x.stock_change <![CDATA[ <= ]]> 1.7)
+        GROUP BY stock_code HAVING count(1) = 3
+    )
+    AND s.crawler_version = #{fourDay}
+    AND s.stock_change <![CDATA[ <= ]]> 2.9 AND s.stock_change <![CDATA[ <= ]]> 9
+    AND s.main_net_inflow_amount <![CDATA[ > ]]> 500
+  </select>
+
+  <select id="selectByTimeVersion" resultMap="BaseResultMap">
+    SELECT <include refid="Base_Column_List" />
+    FROM stock_dfcf_fund_flow_info
+    WHERE time_version=#{timeVersion} AND stock_code=#{stockCode};
+  </select>
+
+  <select id="selectByPrimaryKey" parameterType="java.lang.Long" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List" />
+    from stock_dfcf_fund_flow_info
+    where id = #{id,jdbcType=BIGINT}
+  </select>
+  <insert id="insertSelective" parameterType="com.ths.domain.StockDfcfFundFlowInfo">
+    insert into stock_dfcf_fund_flow_info
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        id,
+      </if>
+      <if test="stockMarket != null">
+        stock_market,
+      </if>
+      <if test="stockRank != null">
+        stock_rank,
+      </if>
+      <if test="stockCode != null">
+        stock_code,
+      </if>
+      <if test="stockName != null">
+        stock_name,
+      </if>
+      <if test="priceNew != null">
+        price_new,
+      </if>
+      <if test="stockChange != null">
+        stock_change,
+      </if>
+      <if test="mainNetInflowAmount != null">
+        main_net_inflow_amount,
+      </if>
+      <if test="mainNetProportion != null">
+        main_net_proportion,
+      </if>
+      <if test="superBigPartNetInflowAmount != null">
+        super_big_part_net_inFlow_amount,
+      </if>
+      <if test="superBigPartNetProportion != null">
+        super_big_part_net_proportion,
+      </if>
+      <if test="bigPartNetInflowAmount != null">
+        big_part_net_inFlow_amount,
+      </if>
+      <if test="bigPartNetProportion != null">
+        big_part_net_proportion,
+      </if>
+      <if test="middlePartNetInflowAmount != null">
+        middle_part_net_inFlow_amount,
+      </if>
+      <if test="middlePartNetProportion != null">
+        middle_part_net_proportion,
+      </if>
+      <if test="litterPartNetInflowAmount != null">
+        litter_part_net_inFlow_amount,
+      </if>
+      <if test="litterPartNetProportion != null">
+        litter_part_net_proportion,
+      </if>
+      <if test="countTime != null">
+        count_time,
+      </if>
+      <if test="stockPage != null">
+        stock_page,
+      </if>
+      <if test="timeVersion != null">
+        time_version,
+      </if>
+      <if test="crawlerVersion != null">
+        crawler_version,
+      </if>
+      <if test="createTime != null">
+        create_time,
+      </if>
+      <if test="updateTime != null">
+        update_time,
+      </if>
+      <if test="someinfo != null">
+        someInfo,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        #{id,jdbcType=BIGINT},
+      </if>
+      <if test="stockMarket != null">
+        #{stockMarket,jdbcType=VARCHAR},
+      </if>
+      <if test="stockRank != null">
+        #{stockRank,jdbcType=VARCHAR},
+      </if>
+      <if test="stockCode != null">
+        #{stockCode,jdbcType=VARCHAR},
+      </if>
+      <if test="stockName != null">
+        #{stockName,jdbcType=VARCHAR},
+      </if>
+      <if test="priceNew != null">
+        #{priceNew,jdbcType=DECIMAL},
+      </if>
+      <if test="stockChange != null">
+        #{stockChange,jdbcType=DECIMAL},
+      </if>
+      <if test="mainNetInflowAmount != null">
+        #{mainNetInflowAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="mainNetProportion != null">
+        #{mainNetProportion,jdbcType=DECIMAL},
+      </if>
+      <if test="superBigPartNetInflowAmount != null">
+        #{superBigPartNetInflowAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="superBigPartNetProportion != null">
+        #{superBigPartNetProportion,jdbcType=DECIMAL},
+      </if>
+      <if test="bigPartNetInflowAmount != null">
+        #{bigPartNetInflowAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="bigPartNetProportion != null">
+        #{bigPartNetProportion,jdbcType=DECIMAL},
+      </if>
+      <if test="middlePartNetInflowAmount != null">
+        #{middlePartNetInflowAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="middlePartNetProportion != null">
+        #{middlePartNetProportion,jdbcType=DECIMAL},
+      </if>
+      <if test="litterPartNetInflowAmount != null">
+        #{litterPartNetInflowAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="litterPartNetProportion != null">
+        #{litterPartNetProportion,jdbcType=DECIMAL},
+      </if>
+      <if test="countTime != null">
+        #{countTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="stockPage != null">
+        #{stockPage},
+      </if>
+      <if test="timeVersion != null">
+        #{timeVersion,jdbcType=VARCHAR},
+      </if>
+      <if test="crawlerVersion != null">
+        #{crawlerVersion,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null">
+        #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="updateTime != null">
+        #{updateTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="someinfo != null">
+        #{someinfo,jdbcType=LONGVARCHAR},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.ths.domain.StockDfcfFundFlowInfo">
+    update stock_dfcf_fund_flow_info
+    <set>
+      <if test="stockMarket != null">
+        stock_market = #{stockMarket,jdbcType=VARCHAR},
+      </if>
+      <if test="stockRank != null">
+        stock_rank = #{stockRank,jdbcType=VARCHAR},
+      </if>
+      <if test="stockCode != null">
+        stock_code = #{stockCode,jdbcType=VARCHAR},
+      </if>
+      <if test="stockName != null">
+        stock_name = #{stockName,jdbcType=VARCHAR},
+      </if>
+      <if test="priceNew != null">
+        price_new = #{priceNew,jdbcType=DECIMAL},
+      </if>
+      <if test="stockChange != null">
+        stock_change = #{stockChange,jdbcType=DECIMAL},
+      </if>
+      <if test="mainNetInflowAmount != null">
+        main_net_inflow_amount = #{mainNetInflowAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="mainNetProportion != null">
+        main_net_proportion = #{mainNetProportion,jdbcType=DECIMAL},
+      </if>
+      <if test="superBigPartNetInflowAmount != null">
+        super_big_part_net_inFlow_amount = #{superBigPartNetInflowAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="superBigPartNetProportion != null">
+        super_big_part_net_proportion = #{superBigPartNetProportion,jdbcType=DECIMAL},
+      </if>
+      <if test="bigPartNetInflowAmount != null">
+        big_part_net_inFlow_amount = #{bigPartNetInflowAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="bigPartNetProportion != null">
+        big_part_net_proportion = #{bigPartNetProportion,jdbcType=DECIMAL},
+      </if>
+      <if test="middlePartNetInflowAmount != null">
+        middle_part_net_inFlow_amount = #{middlePartNetInflowAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="middlePartNetProportion != null">
+        middle_part_net_proportion = #{middlePartNetProportion,jdbcType=DECIMAL},
+      </if>
+      <if test="litterPartNetInflowAmount != null">
+        litter_part_net_inFlow_amount = #{litterPartNetInflowAmount,jdbcType=DECIMAL},
+      </if>
+      <if test="litterPartNetProportion != null">
+        litter_part_net_proportion = #{litterPartNetProportion,jdbcType=DECIMAL},
+      </if>
+      <if test="countTime != null">
+        count_time = #{countTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="stockPage != null">
+        stock_page = #{stockPage},
+      </if>
+      <if test="timeVersion != null">
+        time_version = #{timeVersion,jdbcType=VARCHAR},
+      </if>
+      <if test="crawlerVersion != null">
+        crawler_version = #{crawlerVersion,jdbcType=VARCHAR},
+      </if>
+      <if test="createTime != null">
+        create_time = #{createTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="updateTime != null">
+        update_time = #{updateTime,jdbcType=TIMESTAMP},
+      </if>
+      <if test="someinfo != null">
+        someInfo = #{someinfo,jdbcType=LONGVARCHAR},
+      </if>
+    </set>
+    where id = #{id,jdbcType=BIGINT}
+  </update>
+</mapper>
